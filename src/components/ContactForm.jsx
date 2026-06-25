@@ -1,23 +1,25 @@
 import React, { useState } from "react";
 import { Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { supabase } from "../lib/supabaseClient.js";
 
 /**
- * Form di contatto funzionante senza backend proprio, tramite Formspree
- * (https://formspree.io — piano free sufficiente per un sito vetrina).
+ * Form di contatto collegato a Supabase: ogni invio viene salvato come riga
+ * nella tabella "messages" del tuo progetto Supabase.
  *
  * SETUP RICHIESTO PRIMA DEL DEPLOY:
- * 1. Crea un account gratuito su https://formspree.io con l'email biluxtech@gmail.com
- * 2. Crea un nuovo form: Formspree genera un endpoint tipo
- *    https://formspree.io/f/XXXXXXXX
- * 3. Sostituisci FORMSPREE_ENDPOINT qui sotto con il tuo endpoint reale.
- * 4. Ogni invio dal form arriverà come email a biluxtech@gmail.com.
- *
- * In alternativa a Formspree puoi usare un altro servizio "form-to-email"
- * (es. Web3Forms, Netlify Forms se deployi su Netlify) cambiando solo l'URL
- * e il formato del body in handleSubmit.
+ * 1. Crea un progetto su https://supabase.com (gratuito).
+ * 2. Nel SQL editor di Supabase esegui lo script che trovi in
+ *    supabase/schema.sql per creare la tabella "messages".
+ * 3. Copia Project URL e anon public key da
+ *    Project Settings → API e crea un file ".env" nella root del progetto
+ *    (parti da .env.example) con:
+ *      VITE_SUPABASE_URL=...
+ *      VITE_SUPABASE_ANON_KEY=...
+ * 4. (Opzionale ma consigliato) Configura una Supabase Edge Function o un
+ *    "Database Webhook" per inviarti un'email a biluxtech@gmail.com a ogni
+ *    nuovo inserimento — i dati restano comunque sempre visibili nella
+ *    dashboard Supabase, tabella "messages".
  */
-
-const FORMSPREE_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
 
 export default function ContactForm() {
   const [status, setStatus] = useState("idle"); // idle | submitting | success | error
@@ -31,22 +33,20 @@ export default function ContactForm() {
     e.preventDefault();
     setStatus("submitting");
 
-    try {
-      const res = await fetch(FORMSPREE_ENDPOINT, {
-        method: "POST",
-        headers: { Accept: "application/json" },
-        body: new FormData(e.target),
-      });
+    const { error } = await supabase.from("messages").insert({
+      name: values.name,
+      email: values.email,
+      message: values.message,
+    });
 
-      if (res.ok) {
-        setStatus("success");
-        setValues({ name: "", email: "", message: "" });
-      } else {
-        setStatus("error");
-      }
-    } catch {
+    if (error) {
+      console.error("Errore Supabase:", error.message);
       setStatus("error");
+      return;
     }
+
+    setStatus("success");
+    setValues({ name: "", email: "", message: "" });
   }
 
   if (status === "success") {

@@ -32,16 +32,25 @@ src/
 
 Per modificare i contenuti dei servizi, basta editare `src/data/services.js`.
 
-## Form di contatto
+## Form di contatto (Supabase)
 
-Il form in homepage invia i messaggi via [Formspree](https://formspree.io) (nessun backend da scrivere).
+Il form in homepage salva i messaggi in una tabella Supabase (niente backend da scrivere).
 
-1. Crea un account gratuito su Formspree con l'email `biluxtech@gmail.com`.
-2. Crea un nuovo form: otterrai un endpoint tipo `https://formspree.io/f/XXXXXXXX`.
-3. Apri `src/components/ContactForm.jsx` e sostituisci `FORMSPREE_ENDPOINT` con il tuo endpoint reale.
-4. Ogni invio dal form arriverà come email a `biluxtech@gmail.com`.
+1. Crea un progetto gratuito su [supabase.com](https://supabase.com).
+2. Apri **SQL Editor** nella dashboard e incolla il contenuto di `supabase/schema.sql`: crea la tabella `messages` con Row Level Security (il sito può solo inserire righe, non leggerle — i messaggi sono visibili solo a te nella dashboard).
+3. Vai in **Project Settings → API** e copia:
+   - **Project URL**
+   - **anon public key**
+4. Copia `.env.example` in `.env` nella root del progetto e inserisci i due valori:
+   ```
+   VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+   VITE_SUPABASE_ANON_KEY=la-tua-anon-key
+   ```
+5. Riavvia `npm run dev`. I messaggi inviati dal form li trovi in **Table Editor → messages**.
 
-In alternativa, se deploi su Netlify puoi usare [Netlify Forms](https://docs.netlify.com/forms/setup/) aggiungendo l'attributo `data-netlify="true"` al tag `<form>` invece di Formspree.
+**Per ricevere anche una notifica email** (oltre a vedere i messaggi nella dashboard): in Supabase puoi creare un *Database Webhook* su `messages` (evento INSERT) collegato a un servizio come Resend, oppure una Edge Function che invia l'email a `biluxtech@gmail.com`. Questo passo è opzionale e non incluso di default.
+
+⚠️ Il file `.env` non va mai committato su GitHub (è già escluso in `.gitignore`). Se deploi su Vercel o Netlify, imposta le stesse due variabili nelle impostazioni del progetto (Vercel: Settings → Environment Variables; Netlify: Site settings → Environment variables). Se usi il workflow GitHub Actions incluso per GitHub Pages, aggiungi le due variabili come **Repository secrets** (Settings → Secrets and variables → Actions) e passale come `env` nello step di build in `.github/workflows/deploy.yml`.
 
 ## Deploy
 
@@ -57,4 +66,21 @@ npm run build
 ```
 
 L'output finale si trova in `dist/`.
+
+## Deploy su GitHub (GitHub Pages)
+
+1. Crea un repository su GitHub e pusha questo progetto:
+   ```bash
+   git init
+   git add .
+   git commit -m "Bilux Tech"
+   git branch -M main
+   git remote add origin https://github.com/TUO-UTENTE/TUO-REPO.git
+   git push -u origin main
+   ```
+2. Su GitHub vai in **Settings → Pages** e in "Build and deployment" seleziona **GitHub Actions** come source.
+3. Il workflow incluso in `.github/workflows/deploy.yml` builda e pubblica automaticamente il sito a ogni push su `main`.
+4. Il sito sarà disponibile su `https://TUO-UTENTE.github.io/TUO-REPO/` (il workflow imposta automaticamente il percorso corretto in base al nome del repo).
+
+Se invece vuoi solo versionare il codice su GitHub e fare il deploy da Vercel/Netlify (collegando direttamente la repo), non serve nessuna configurazione aggiuntiva: bastano i passi 1 sopra, poi importi la repo su Vercel o Netlify.
 
