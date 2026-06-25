@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Send, CheckCircle2, AlertCircle } from "lucide-react";
-import { supabase } from "../lib/supabaseClient.js";
+import { isSupabaseConfigured, supabase } from "../lib/supabaseClient.js";
 
 /**
  * Form di contatto collegato a Supabase: ogni invio viene salvato come riga
@@ -32,6 +32,12 @@ export default function ContactForm() {
   async function handleSubmit(e) {
     e.preventDefault();
     setStatus("submitting");
+
+    if (!isSupabaseConfigured) {
+      console.error("Supabase non configurato: mancano VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY.");
+      setStatus("error");
+      return;
+    }
 
     const { error } = await supabase.from("messages").insert({
       name: values.name,
