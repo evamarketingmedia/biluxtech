@@ -1,9 +1,26 @@
+# Sito statico: nessun comando di build, si pubblica la cartella public/
 [build]
-  command = "npm run build"
-  publish = "dist"
+  publish = "public"
+  command = ""
 
-# Redirect per il client-side routing di react-router-dom
+# Intestazioni di sicurezza
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Font e immagini cambiano raramente: cache lunga
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+# Vecchio dominio www → dominio principale (se www punta a Netlify)
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+  from = "https://www.biluxtech.com/*"
+  to = "https://biluxtech.com/:splat"
+  status = 301
+  force = true
